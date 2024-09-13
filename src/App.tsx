@@ -1,35 +1,41 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import Search from "./components/search/Search";
+import CurrentWeather from './components/current-weather/Current-weather';
+// import Forecast from "./components/forecast/Forecast";
+import { WEATHER_API_URL, WEATHER_API_KEY } from "./api";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface WeatherData {
+  city: string;
+  weather: { description: string; icon: string }[];
+  main: { temp: number; feels_like: number; humidity: number; pressure: number };
+  wind: { speed: number };
 }
 
-export default App
+function App() {
+  const [currentWeather, setCurrentWeather] = useState<WeatherData | null>(null);
+
+  const handleOnSearchChange = (searchData: { value: string; label: string }) => {
+    const [lat, lon] = searchData.value.split(" ");
+
+    const currentWeatherFetch = fetch(
+      `${WEATHER_API_URL}/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
+    );
+
+    Promise.all([currentWeatherFetch])
+      .then(async (response) => {
+        const weatherResponse = await response[0].json();
+        setCurrentWeather({ city: searchData.label, ...weatherResponse });
+      })
+      .catch(console.log);
+  };
+
+  return (
+    <div className="container">
+      <Search onSearchChange={handleOnSearchChange} />
+      {currentWeather && <CurrentWeather data={currentWeather} />}
+    </div>
+  );
+}
+
+export default App;
